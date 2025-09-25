@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISS Causal Systems Graph - A Tribute</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(circle at center, #0a0a2e 0%, #000000 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid #4a90e2;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #4a90e2;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .tribute {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffd700;
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        .tribute h3 {
+            margin: 0 0 10px 0;
+            color: #ffd700;
+            font-size: 16px;
+        }
+
+        .tribute p {
+            margin: 5px 0;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #ccc;
+        }
+
+        .legend {
+            position: absolute;
+            top: 120px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #555;
+            z-index: 1000;
+        }
+
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #4a90e2;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #555;
+            z-index: 1000;
+            font-size: 12px;
+        }
+
+        .stats h4 {
+            margin: 0 0 10px 0;
+            color: #4a90e2;
+            font-size: 14px;
+        }
+
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .node-text {
+            font-size: 10px;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .link-text {
+            font-size: 8px;
+            fill: #ccc;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #4a90e2;
+            border-radius: 5px;
+            padding: 10px;
+            pointer-events: none;
+            z-index: 2000;
+            max-width: 250px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .star {
+            fill: white;
+            animation: twinkle 3s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="stars" id="stars"></div>
+
+        <div class="header">
+            <h1>International Space Station - Systems Architecture</h1>
+            <p>A tribute to 25 years of human presence in space • Retirement: September 25, 2025</p>
+        </div>
+
+        <div class="legend">
+            <h4>System Types</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ff6b6b;"></div>
+                Critical Systems
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4ecdc4;"></div>
+                Infrastructure
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #45b7d1;"></div>
+                Navigation & Control
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffd93d;"></div>
+                Research & Habitat
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #a8e6cf;"></div>
+                Support Systems
+            </div>
+        </div>
+
+        <div class="stats">
+            <h4>ISS Legacy</h4>
+            <p><strong>Operational:</strong> 25 years</p>
+            <p><strong>Crew Members:</strong> 270+</p>
+            <p><strong>Experiments:</strong> 3,000+</p>
+            <p><strong>Partner Nations:</strong> 15</p>
+            <p><strong>Orbit Altitude:</strong> ~400km</p>
+            <p><strong>Speed:</strong> 27,600 km/h</p>
+        </div>
+
+        <div class="tribute">
+            <h3>For Dan Goldin</h3>
+            <p>Former NASA Administrator who championed "faster, better, cheaper" and laid the groundwork for
+                international cooperation that made the ISS possible.</p>
+            <p><em>"The ISS represents humanity's greatest collaborative achievement in space."</em></p>
+        </div>
+
+        <svg id="graph"></svg>
+    </div>
+
+    <script>
+        // ISS Systems Data
+        const nodes = [
+            { id: "life_support_system", name: "Environmental Control &\nLife Support (ECLSS)", type: "critical_system", criticality: 0.95, group: 1 },
+            { id: "power_generation", name: "Solar Array\nPower System", type: "power_infrastructure", criticality: 1.0, group: 2 },
+            { id: "attitude_control", name: "Attitude Control\nSystem (ACS)", type: "navigation_system", criticality: 0.9, group: 3 },
+            { id: "communication_system", name: "Communication &\nTracking System", type: "communication_infrastructure", criticality: 0.85, group: 2 },
+            { id: "thermal_management", name: "Thermal Control\nSystem", type: "environmental_system", criticality: 0.88, group: 1 },
+            { id: "scientific_research", name: "Scientific Research\nFacilities", type: "mission_payload", criticality: 0.7, group: 4 },
+            { id: "crew_quarters", name: "Crew Living\nQuarters", type: "habitat_system", criticality: 0.75, group: 4 },
+            { id: "robotic_systems", name: "Robotic Systems\n(Canadarm2)", type: "automation_system", criticality: 0.8, group: 5 },
+            { id: "docking_systems", name: "Docking &\nBerthing Systems", type: "interface_system", criticality: 0.9, group: 5 },
+            { id: "structural_framework", name: "Integrated Truss\nStructure", type: "structural_system", criticality: 0.95, group: 2 },
+            { id: "international_cooperation", name: "International\nPartnership", type: "management_system", criticality: 0.85, group: 5 },
+            { id: "mission_control", name: "Mission Control\nCenters", type: "ground_support", criticality: 0.9, group: 5 }
+        ];
+
+        const links = [
+            { source: "power_generation", target: "life_support_system", weight: 0.95, type: "enables" },
+            { source: "power_generation", target: "attitude_control", weight: 0.9, type: "enables" },
+            { source: "power_generation", target: "communication_system", weight: 0.85, type: "enables" },
+            { source: "power_generation", target: "thermal_management", weight: 0.88, type: "enables" },
+            { source: "power_generation", target: "scientific_research", weight: 0.8, type: "enables" },
+            { source: "attitude_control", target: "power_generation", weight: 0.75, type: "optimizes" },
+            { source: "attitude_control", target: "communication_system", weight: 0.8, type: "enables" },
+            { source: "life_support_system", target: "crew_quarters", weight: 0.95, type: "sustains" },
+            { source: "life_support_system", target: "scientific_research", weight: 0.8, type: "enables" },
+            { source: "thermal_management", target: "life_support_system", weight: 0.85, type: "supports" },
+            { source: "structural_framework", target: "power_generation", weight: 0.95, type: "supports" },
+            { source: "structural_framework", target: "thermal_management", weight: 0.9, type: "supports" },
+            { source: "structural_framework", target: "robotic_systems", weight: 0.85, type: "supports" },
+            { source: "robotic_systems", target: "docking_systems", weight: 0.8, type: "supports" },
+            { source: "docking_systems", target: "crew_quarters", weight: 0.9, type: "supplies" },
+            { source: "docking_systems", target: "life_support_system", weight: 0.85, type: "replenishes" },
+            { source: "communication_system", target: "mission_control", weight: 0.95, type: "connects" },
+            { source: "mission_control", target: "attitude_control", weight: 0.85, type: "commands" },
+            { source: "international_cooperation", target: "docking_systems", weight: 0.9, type: "enables" },
+            { source: "international_cooperation", target: "scientific_research", weight: 0.85, type: "multiplies" }
+        ];
+
+        // Color mapping
+        const colorMap = {
+            1: "#ff6b6b", // Critical systems - red
+            2: "#4ecdc4", // Infrastructure - teal
+            3: "#45b7d1", // Navigation - blue
+            4: "#ffd93d", // Research/Habitat - yellow
+            5: "#a8e6cf"  // Support systems - green
+        };
+
+        // Create stars background
+        function createStars() {
+            const starsSvg = d3.select("#stars").append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%");
+
+            for (let i = 0; i < 200; i++) {
+                starsSvg.append("circle")
+                    .attr("class", "star")
+                    .attr("cx", Math.random() * window.innerWidth)
+                    .attr("cy", Math.random() * window.innerHeight)
+                    .attr("r", Math.random() * 1.5)
+                    .style("animation-delay", Math.random() * 3 + "s");
+            }
+        }
+
+        // Initialize visualization
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select("#graph")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Create tooltip
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        // Force simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(d => 120 * (1 - d.weight + 0.5)))
+            .force("charge", d3.forceManyBody().strength(-800))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(60));
+
+        // Create gradient definitions
+        const defs = svg.append("defs");
+
+        // Create gradients for different link types
+        const gradients = ["enables", "supports", "optimizes", "connects", "supplies"];
+        gradients.forEach(type => {
+            const gradient = defs.append("linearGradient")
+                .attr("id", `gradient-${type}`)
+                .attr("gradientUnits", "userSpaceOnUse");
+
+            gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", type === "enables" ? "#4a90e2" :
+                    type === "supports" ? "#2ecc71" :
+                        type === "optimizes" ? "#f39c12" :
+                            type === "connects" ? "#e74c3c" : "#9b59b6")
+                .attr("stop-opacity", 0.8);
+
+            gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#ffffff")
+                .attr("stop-opacity", 0.3);
+        });
+
+        // Create links
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke", d => `url(#gradient-${d.type})`)
+            .attr("stroke-width", d => Math.sqrt(d.weight * 8))
+            .attr("stroke-opacity", 0.7)
+            .attr("marker-end", "url(#arrowhead)");
+
+        // Add arrowhead marker
+        defs.append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 25)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#4a90e2")
+            .attr("opacity", 0.8);
+
+        // Create nodes with glow effect
+        const nodeGroup = svg.append("g")
+            .selectAll("g")
+            .data(nodes)
+            .enter().append("g")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        // Add glow filter
+        const filter = defs.append("filter")
+            .attr("id", "glow");
+
+        filter.append("feGaussianBlur")
+            .attr("stdDeviation", "3")
+            .attr("result", "coloredBlur");
+
+        const feMerge = filter.append("feMerge");
+        feMerge.append("feMergeNode").attr("in", "coloredBlur");
+        feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+        // Add circles to nodes
+        nodeGroup.append("circle")
+            .attr("r", d => 20 + d.criticality * 20)
+            .attr("fill", d => colorMap[d.group])
+            .attr("stroke", "#ffffff")
+            .attr("stroke-width", 2)
+            .style("filter", "url(#glow)")
+            .style("cursor", "pointer");
+
+        // Add pulsing effect for critical systems
+        nodeGroup.selectAll("circle")
+            .filter(d => d.criticality > 0.9)
+            .style("animation", "pulse 2s infinite");
+
+        // Add CSS for pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { stroke-width: 2; }
+                50% { stroke-width: 4; }
+                100% { stroke-width: 2; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add text to nodes
+        nodeGroup.append("text")
+            .attr("class", "node-text")
+            .attr("dy", "0.35em")
+            .text(d => d.name)
+            .style("font-weight", d => d.criticality > 0.9 ? "bold" : "normal");
+
+        // Add hover effects
+        nodeGroup
+            .on("mouseover", function (event, d) {
+                d3.select(this).select("circle")
+                    .transition()
+                    .duration(200)
+                    .attr("r", d => 25 + d.criticality * 25);
+
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+
+                tooltip.html(`
+                    <strong>${d.name}</strong><br/>
+                    Type: ${d.type.replace(/_/g, ' ')}<br/>
+                    Criticality: ${(d.criticality * 100).toFixed(0)}%<br/>
+                    <em>${getSystemDescription(d.id)}</em>
+                `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function (event, d) {
+                d3.select(this).select("circle")
+                    .transition()
+                    .duration(200)
+                    .attr("r", d => 20 + d.criticality * 20);
+
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+        // Update positions on tick
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            nodeGroup
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // System descriptions
+        function getSystemDescription(id) {
+            const descriptions = {
+                "life_support_system": "Manages atmosphere, water recovery, and waste processing for crew survival",
+                "power_generation": "Eight solar array wings generating 120kW of power through photovoltaic cells",
+                "attitude_control": "Gyroscopes, reaction wheels, and thrusters maintaining station orientation",
+                "communication_system": "Multiple antenna systems enabling crew communication and telemetry",
+                "thermal_management": "Heat exchangers and radiators managing extreme temperature variations",
+                "scientific_research": "Multiple laboratories enabling microgravity research across disciplines",
+                "crew_quarters": "Private crew quarters, galley, waste facilities, and recreational areas",
+                "robotic_systems": "Canadarm2 and robotic systems for assembly, maintenance, and cargo operations",
+                "docking_systems": "Multiple ports enabling crew and cargo vehicle docking from international partners",
+                "structural_framework": "Primary structural backbone supporting solar arrays and external systems",
+                "international_cooperation": "Collaboration between NASA, Roscosmos, ESA, JAXA, and CSA",
+                "mission_control": "24/7 monitoring and support from Houston, Moscow, Munich, and other centers"
+            };
+            return descriptions[id] || "Critical ISS system component";
+        }
+
+        // Add connection strength indicators
+        function addConnectionStrengthIndicators() {
+            const linkLabels = svg.append("g")
+                .selectAll("text")
+                .data(links.filter(d => d.weight > 0.85))
+                .enter().append("text")
+                .attr("class", "link-text")
+                .attr("text-anchor", "middle")
+                .text(d => `${(d.weight * 100).toFixed(0)}%`)
+                .style("fill", "#4a90e2")
+                .style("font-weight", "bold");
+
+            simulation.on("tick.labels", () => {
+                linkLabels
+                    .attr("x", d => (d.source.x + d.target.x) / 2)
+                    .attr("y", d => (d.source.y + d.target.y) / 2 - 5);
+            });
+        }
+
+        // Add orbital path animation
+        function addOrbitalAnimation() {
+            const orbit = svg.append("circle")
+                .attr("cx", width / 2)
+                .attr("cy", height / 2)
+                .attr("r", Math.min(width, height) * 0.4)
+                .attr("fill", "none")
+                .attr("stroke", "rgba(74, 144, 226, 0.2)")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,5");
+
+            const satellite = svg.append("circle")
+                .attr("r", 3)
+                .attr("fill", "#ffd700")
+                .style("filter", "url(#glow)");
+
+            let angle = 0;
+            const orbitRadius = Math.min(width, height) * 0.4;
+
+            function animateOrbit() {
+                angle += 0.02;
+                const x = width / 2 + Math.cos(angle) * orbitRadius;
+                const y = height / 2 + Math.sin(angle) * orbitRadius;
+
+                satellite
+                    .attr("cx", x)
+                    .attr("cy", y);
+
+                requestAnimationFrame(animateOrbit);
+            }
+
+            animateOrbit();
+        }
+
+        // Add achievement milestones
+        function addAchievementBadges() {
+            const achievements = [
+                { x: width - 100, y: height / 2 - 120, text: "3,000+", label: "Experiments", color: "#ffd93d" },
+                { x: width - 100, y: height / 2 - 40, text: "270+", label: "Astronauts", color: "#4ecdc4" },
+                { x: width - 100, y: height / 2 + 40, text: "25", label: "Years", color: "#ff6b6b" },
+                { x: width - 100, y: height / 2 + 120, text: "15", label: "Nations", color: "#a8e6cf" }
+            ];
+
+            const badgeGroup = svg.append("g").attr("class", "achievements");
+
+            achievements.forEach(achievement => {
+                const badge = badgeGroup.append("g");
+
+                badge.append("circle")
+                    .attr("cx", achievement.x)
+                    .attr("cy", achievement.y)
+                    .attr("r", 25)
+                    .attr("fill", achievement.color)
+                    .attr("opacity", 0.8)
+                    .style("filter", "url(#glow)");
+
+                badge.append("text")
+                    .attr("x", achievement.x)
+                    .attr("y", achievement.y)
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "middle")
+                    .attr("font-size", "12px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "black")
+                    .text(achievement.text);
+
+                badge.append("text")
+                    .attr("x", achievement.x)
+                    .attr("y", achievement.y + 38)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "10px")
+                    .attr("fill", "white")
+                    .text(achievement.label);
+            });
+        }
+
+        // Add floating particles effect
+        function addFloatingParticles() {
+            const particles = svg.append("g").attr("class", "particles");
+
+            for (let i = 0; i < 50; i++) {
+                const particle = particles.append("circle")
+                    .attr("r", Math.random() * 2 + 1)
+                    .attr("fill", "rgba(255, 255, 255, 0.3)")
+                    .attr("cx", Math.random() * width)
+                    .attr("cy", Math.random() * height);
+
+                // Animate particles floating
+                function animateParticle() {
+                    particle.transition()
+                        .duration(8000 + Math.random() * 4000)
+                        .attr("cy", particle.attr("cy") - 100 - Math.random() * 100)
+                        .attr("opacity", 0)
+                        .on("end", () => {
+                            particle
+                                .attr("cy", height + 10)
+                                .attr("cx", Math.random() * width)
+                                .attr("opacity", 0.3);
+                            animateParticle();
+                        });
+                }
+
+                setTimeout(animateParticle, Math.random() * 5000);
+            }
+        }
+
+        // Initialize all effects
+        createStars();
+        addConnectionStrengthIndicators();
+        addOrbitalAnimation();
+        addAchievementBadges();
+        addFloatingParticles();
+
+        // Add final tribute message that fades in
+        setTimeout(() => {
+            const tributeOverlay = d3.select("body").append("div")
+                .style("position", "absolute")
+                .style("top", "50%")
+                .style("left", "50%")
+                .style("transform", "translate(-50%, -50%)")
+                .style("background", "rgba(0,0,0,0.9)")
+                .style("padding", "30px")
+                .style("border-radius", "15px")
+                .style("border", "2px solid #ffd700")
+                .style("text-align", "center")
+                .style("z-index", "3000")
+                .style("opacity", "0")
+                .style("color", "white")
+                .html(`
+                    <h2 style="color: #ffd700; margin: 0 0 15px 0;">Thank you, ISS</h2>
+                    <p style="margin: 0 0 10px 0; font-size: 16px;">For 25 years of pushing the boundaries of human knowledge</p>
+                    <p style="margin: 0; font-size: 14px; color: #ccc;">From concept to reality - a testament to what we can achieve together</p>
+                    <button onclick="this.parentElement.remove()" style="margin-top: 15px; padding: 8px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer;">Continue Exploring</button>
+                `);
+
+            tributeOverlay.transition()
+                .duration(2000)
+                .style("opacity", "1");
+        }, 5000);
+
+    </script>
+</body>
+
+</html>
