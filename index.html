@@ -357,7 +357,41 @@
             .attr("stroke", d => `url(#gradient-${d.type})`)
             .attr("stroke-width", d => Math.sqrt(d.weight * 8))
             .attr("stroke-opacity", 0.7)
-            .attr("marker-end", "url(#arrowhead)");
+            .attr("marker-end", "url(#arrowhead)")
+            .style("cursor", "pointer")
+            .on("mouseover", function (event, d) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("stroke-width", d => Math.sqrt(d.weight * 12))
+                    .attr("stroke-opacity", 1);
+
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .95);
+
+                const sourceNode = nodes.find(n => n.id === d.source.id);
+                const targetNode = nodes.find(n => n.id === d.target.id);
+
+                tooltip.html(`
+                    <strong style="color: #4a90e2;">${sourceNode.name.replace(/\n/g, ' ')}</strong><br/>
+                    <span style="color: #ffd700;">→ ${d.type.toUpperCase()} →</span><br/>
+                    <strong style="color: #4a90e2;">${targetNode.name.replace(/\n/g, ' ')}</strong><br/><br/>
+                    <strong>Connection Strength:</strong> ${(d.weight * 100).toFixed(0)}%<br/>
+                    <em style="color: #a8e6cf;">${getConnectionDescription(d.source.id, d.target.id, d.type)}</em>
+                `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function (event, d) {
+                d3.select(this)
+                    .transition()
+                    .duration(300)
+                    .attr("stroke-width", d => Math.sqrt(d.weight * 8))
+                    .attr("stroke-opacity", 0.7);
+
+                tooltip.transition().duration(500).style("opacity", 0);
+            });
 
         // Add arrowhead marker
         defs.append("marker")
@@ -506,6 +540,35 @@
                 "mission_control": "24/7 monitoring and support from Houston, Moscow, Munich, and other centers"
             };
             return descriptions[id] || "Critical ISS system component";
+        }
+
+        // Connection descriptions showing the intricate interdependencies
+        function getConnectionDescription(sourceId, targetId, type) {
+            const connectionMap = {
+                "power_generation->life_support_system": "Solar arrays provide critical 120kW power for ECLSS pumps, fans, processors, and water recovery systems - without power, crew has ~10 hours of backup air",
+                "power_generation->attitude_control": "ACS consumes ~2.5kW continuously for gyroscopes and reaction wheels, with thrusters requiring additional power for major maneuvers",
+                "power_generation->communication_system": "Communication systems draw steady power for transponders, amplifiers, and antenna positioning - critical for crew safety and mission control contact",
+                "power_generation->thermal_management": "Thermal control pumps and radiator systems require constant power to manage the -157°C to +121°C temperature extremes",
+                "power_generation->scientific_research": "Research racks consume ~40% of available power - experiments often require precise power conditioning and uninterrupted supply",
+                "attitude_control->power_generation": "Proper solar array tracking increases power generation by up to 30% - attitude control optimizes array orientation toward the sun",
+                "attitude_control->communication_system": "Precise attitude control required for high-gain antenna pointing - even 1° misalignment can break communication links with ground",
+                "life_support_system->crew_quarters": "ECLSS maintains 21% oxygen, removes CO2, processes urine to drinking water, and manages cabin pressure for crew survival in living areas",
+                "life_support_system->scientific_research": "Controlled atmosphere essential for biological experiments - ECLSS provides precise temperature, humidity, and air quality control",
+                "thermal_management->life_support_system": "Heat exchangers remove waste heat from ECLSS equipment - thermal failure would cause life support systems to overheat within hours",
+                "structural_framework->power_generation": "Integrated Truss Structure provides mounting and precise positioning for 8 solar array wings spanning 240 feet",
+                "structural_framework->thermal_management": "Truss supports massive radiator panels and provides pathways for coolant loops throughout the 420-ton structure",
+                "structural_framework->robotic_systems": "Truss provides rail systems and power/data connections enabling Canadarm2's 17.6-meter reach across the entire station",
+                "robotic_systems->docking_systems": "Canadarm2 captures visiting vehicles like Dragon and Cygnus, then precisely berths them to docking ports - requires millimeter precision",
+                "docking_systems->crew_quarters": "Visiting vehicles deliver fresh food, water, oxygen, and personal items - without resupply missions, station supplies last ~6 months",
+                "docking_systems->life_support_system": "Cargo vehicles deliver critical ECLSS spare parts, filters, and consumables - many components have limited lifespans requiring regular replacement",
+                "communication_system->mission_control": "Continuous telemetry streams from 350+ sensors plus video feeds enable ground teams to monitor crew safety and system health 24/7",
+                "mission_control->attitude_control": "Ground control uploads navigation updates, orbital maneuver commands, and debris avoidance maneuvers to maintain proper altitude and avoid collisions",
+                "international_cooperation->docking_systems": "Partnership enables access via Soyuz (Russia), Dragon (SpaceX), Starliner (Boeing), and Cygnus (Northrop Grumman) - no single nation could maintain the station alone",
+                "international_cooperation->scientific_research": "Shared expertise from 15 nations enables research impossible for any single country - from European protein crystal growth to Japanese materials science"
+            };
+
+            const key = `${sourceId}->${targetId}`;
+            return connectionMap[key] || `${type} relationship between these critical systems demonstrates the intricate engineering that kept ISS operational for 25 years`;
         }
 
         // Add connection strength indicators
