@@ -188,8 +188,8 @@
         <div class="stars" id="stars"></div>
 
         <div class="header">
-            <h1>International Space Station - Inspirational Systems Architecture</h1>
-            <p>A tribute to 25 years of human presence in space </p>
+            <h1>International Space Station - Inspiring Systems Architecture</h1>
+            <p>A tribute to 25 years of human presence in space</p>
         </div>
 
         <div class="legend">
@@ -325,7 +325,7 @@
         const defs = svg.append("defs");
 
         // Create gradients for different link types
-        const gradients = ["enables", "supports", "optimizes", "connects", "supplies"];
+        const gradients = ["enables", "supports", "optimizes", "connects", "supplies", "sustains", "replenishes", "commands", "multiplies"];
         gradients.forEach(type => {
             const gradient = defs.append("linearGradient")
                 .attr("id", `gradient-${type}`)
@@ -336,7 +336,11 @@
                 .attr("stop-color", type === "enables" ? "#4a90e2" :
                     type === "supports" ? "#2ecc71" :
                         type === "optimizes" ? "#f39c12" :
-                            type === "connects" ? "#e74c3c" : "#9b59b6")
+                            type === "connects" ? "#e74c3c" :
+                                type === "sustains" ? "#ff6b6b" :
+                                    type === "replenishes" ? "#4ecdc4" :
+                                        type === "commands" ? "#ffd93d" :
+                                            type === "multiplies" ? "#a8e6cf" : "#9b59b6")
                 .attr("stop-opacity", 0.8);
 
             gradient.append("stop")
