@@ -180,6 +180,44 @@
             fill: white;
             animation: twinkle 3s infinite;
         }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+
+            .legend,
+            .stats,
+            .tribute,
+            .achievements {
+                display: none !important;
+                /* Use important to override JS-added elements if needed */
+            }
+
+            .header {
+                position: relative;
+                /* Change positioning to flow with document */
+                top: auto;
+                left: auto;
+                transform: none;
+                width: auto;
+                /* Let it be natural width */
+                border-radius: 0;
+                text-align: center;
+                /* Center text for better wrapping on mobile */
+                padding: 10px 15px;
+                border-left: none;
+                border-right: none;
+                border-top: none;
+                box-shadow: none;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .header p {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 
@@ -595,19 +633,19 @@
             const orbit = svg.append("circle")
                 .attr("cx", width / 2)
                 .attr("cy", height / 2)
-                .attr("r", Math.min(width, height) * 0.4)
+                .attr("r", width * 0.4) // Use width to constrain orbit on portrait screens
                 .attr("fill", "none")
                 .attr("stroke", "rgba(74, 144, 226, 0.2)")
                 .attr("stroke-width", 2)
                 .attr("stroke-dasharray", "5,5");
 
             const satellite = svg.append("circle")
-                .attr("r", 3)
+                .attr("r", window.innerWidth <= 768 ? 2 : 3) // Smaller satellite on mobile
                 .attr("fill", "#ffd700")
                 .style("filter", "url(#glow)");
 
             let angle = 0;
-            const orbitRadius = Math.min(width, height) * 0.4;
+            const orbitRadius = width * 0.4; // Use width to constrain orbit on portrait screens
 
             function animateOrbit() {
                 angle += 0.02;
@@ -724,6 +762,11 @@
                     <p style="margin: 0; font-size: 14px; color: #ccc;">From concept to reality - a testament to what we can achieve together</p>
                     <button onclick="this.parentElement.remove()" style="margin-top: 15px; padding: 8px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer;">Continue Exploring</button>
                 `);
+
+            // Hide tribute on mobile
+            if (window.innerWidth <= 768) {
+                tributeOverlay.style("display", "none");
+            }
 
             tributeOverlay.transition()
                 .duration(2000)
